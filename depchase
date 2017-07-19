@@ -400,6 +400,9 @@ def rules_table_adam(solver, pkgs=None):
     if pkgs is None:
         pkgs = [solv.XSolvable(solver.pool, i) for i in solver.raw_decisions(1)]
 
+    print ("strict digraph G {")
+    print ("node [fontname=monospace];")
+
     for p in pkgs:
         reason, rule = solver.describe_decision(p)
         if reason == solv.Solver.SOLVER_REASON_UNRELATED:
@@ -408,18 +411,24 @@ def rules_table_adam(solver, pkgs=None):
         if reason == solv.Solver.SOLVER_REASON_WEAKDEP:
             raise NotImplementedError
 
-        print("")
         if rule is not None:
             for info in rule.allinfos():
+                dependency = "-".join(str(p).split("-")[:-1])
                 if info.type == solv.Solver.SOLVER_RULE_JOB:
-                    print ("USER -> {}".format(p))
+                    # user wants this package, let's mark it green
+                    print('\t"{}" [color=red,fontcolor="#009900",fontsize=20];'.format(dependency))
+                    #print ("USER -> {}".format(p))
                 elif info.type == solv.Solver.SOLVER_RULE_PKG_REQUIRES:
-                    print ("{} -> {}    ({})".format(info.solvable, p, info.dep))
+                    package = "-".join(str(info.solvable).split("-")[:-1])
+                    print('\t"{}" -> "{}";'.format(package, dependency))
+                    #print ("{} -> {}    ({})".format(info.solvable, p, info.dep))
                 else:
                     print(info.type)
                     raise NotImplementedError
         else:
             assert False
+
+    print ("}")
 
     return 
 
