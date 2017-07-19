@@ -396,6 +396,33 @@ def rules_table(solver, pkgs=None):
 
     return tb
 
+def rules_table_adam(solver, pkgs=None):
+    if pkgs is None:
+        pkgs = [solv.XSolvable(solver.pool, i) for i in solver.raw_decisions(1)]
+
+    for p in pkgs:
+        reason, rule = solver.describe_decision(p)
+        if reason == solv.Solver.SOLVER_REASON_UNRELATED:
+            continue
+
+        if reason == solv.Solver.SOLVER_REASON_WEAKDEP:
+            raise NotImplementedError
+
+        print("")
+        if rule is not None:
+            for info in rule.allinfos():
+                if info.type == solv.Solver.SOLVER_RULE_JOB:
+                    print ("USER -> {}".format(p))
+                elif info.type == solv.Solver.SOLVER_RULE_PKG_REQUIRES:
+                    print ("{} -> {}    ({})".format(info.solvable, p, info.dep))
+                else:
+                    print(info.type)
+                    raise NotImplementedError
+        else:
+            assert False
+
+    return 
+
 def solve(solver, pkgnames, selfhost=False):
     pool = solver.pool
 
@@ -420,8 +447,9 @@ def solve(solver, pkgnames, selfhost=False):
     candq = solver.transaction().newpackages()
     sources = set(get_sourcepkg(s) for s in candq)
 
-    logger.debug(alternatives_table(solver))
-    logger.debug(rules_table(solver))
+    #logger.debug(alternatives_table(solver))
+    #logger.debug(rules_table(solver))
+    rules_table_adam(solver)
 
     if not selfhost:
         return set(candq), sources
@@ -541,8 +569,8 @@ def resolve(ctx, pkgnames, recommends, hint, selfhost):
         solver.set_flag(solv.Solver.SOLVER_FLAG_IGNORE_RECOMMENDED, 1)
 
     binary, source = solve(solver, pkgnames, selfhost=selfhost)
-    for p in itertools.chain(binary, source or ()):
-        print(p)
+    #for p in itertools.chain(binary, source or ()):
+    #    print(p)
 
 if __name__ == "__main__":
     cli(obj={})
